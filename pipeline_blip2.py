@@ -69,7 +69,8 @@ def get_colors(image, num_colors=5):
     color_counts = Counter([tuple(pixel) for pixel in arr])
     most_common = color_counts.most_common(num_colors)
 
-    colors_rgb = [list(color[0]) for color in most_common]
+    # Convert np.uint8 to int
+    colors_rgb = [[int(color[0][0]), int(color[0][1]), int(color[0][2])] for color in most_common]
     color_names = [closest_color_name(color[0]) for color in most_common]
 
     return {
