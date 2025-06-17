@@ -49,7 +49,6 @@ model = Blip2ForConditionalGeneration.from_pretrained(
     torch_dtype=torch.float16 if device == "cuda" else torch.float32,
     device_map="auto"
 )
-#model.to(device)
 
 # 3. Find closest color name from RGB
 def closest_color_name(rgb):
@@ -86,10 +85,21 @@ def analyze_paintings_with_blip2():
         try:
             image_url = painting.get("primaryImageSmall")
             if not image_url:
+                print(f"❌ No image found for painting '{painting.get('title', 'Untitled')}'")
                 continue
 
+            # Attempt to download the image
             response = requests.get(image_url)
+            if response.status_code != 200:
+                print(f"❌ Failed to download image for '{painting.get('title', 'Untitled')}'")
+                continue
+
             image = Image.open(BytesIO(response.content)).convert("RGB")
+
+            # Check if image opened correctly
+            if image is None:
+                print(f"❌ Could not process image for '{painting.get('title', 'Untitled')}'")
+                continue
 
             # Generate image description
             inputs = processor(
@@ -100,6 +110,13 @@ def analyze_paintings_with_blip2():
 
             generated_ids = model.generate(**inputs, max_new_tokens=100)
             generated_text = processor.batch_decode(generated_ids, skip_special_tokens=True)[0].strip()
+
+            # Verificar la descripción generada
+            print(f"Generated Text for '{painting['title']}': {generated_text}")
+
+            if generated_text == "Describe this painting in detail.":
+                print(f"⚠️ Warning: Generated text is the default message for '{painting['title']}'")
+                generated_text = "No detailed description available."
 
             # Get color data
             color_data = get_colors(image)
