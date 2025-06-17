@@ -43,12 +43,15 @@ CSS3_HEX_TO_NAMES = {
 
 # 2. Load BLIP-2
 device = "cuda" if torch.cuda.is_available() else "cpu"
-processor = BlipProcessor.from_pretrained("Salesforce/blip2-opt-2.7b", device_map="auto")
+processor = BlipProcessor.from_pretrained("Salesforce/blip2-opt-2.7b", use_fast=True).to(device)
 model = BlipForConditionalGeneration.from_pretrained(
     "Salesforce/blip2-opt-2.7b",
     torch_dtype=torch.float16 if device == "cuda" else torch.float32,
     device_map="auto"
-)
+).to(device)  # Mover el modelo al dispositivo adecuado
+
+# Liberar caché de la GPU si es necesario
+torch.cuda.empty_cache()
 
 # 3. Find closest color name from RGB
 def closest_color_name(rgb):
@@ -106,9 +109,18 @@ def analyze_paintings_with_blip2():
                 images=image,
                 text="Describe this painting in detail.",
                 return_tensors="pt"
-            ).to(device, torch.float16 if device == "cuda" else torch.float32)
+            )
 
+            # Ensure inputs are moved to the correct device
+            inputs = {k: v.to(device) for k, v in inputs.items()}
+
+            # Generate tokens and add a print to check generated_ids
             generated_ids = model.generate(**inputs, max_new_tokens=150, top_k=50)
+
+            # Print the generated token IDs
+            print(f"Generated token IDs for '{painting['title']}': {generated_ids}")
+
+            # Decode the tokens into text
             generated_text = processor.batch_decode(generated_ids, skip_special_tokens=True)[0].strip()
 
             # Verificar la descripción generada
