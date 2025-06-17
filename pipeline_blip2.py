@@ -13,6 +13,34 @@ client = MongoClient("mongodb+srv://danielarb:m9IeL85JNjFWQR73@cluster0.oz78pty.
 db = client["moodmuse"]
 collection = db["paintings_subset"]
 
+# Custom color dictionary
+CSS3_HEX_TO_NAMES = {
+    "#ff0000": "red",
+    "#8b0000": "darkred",
+    "#800000": "maroon",
+    "#0000ff": "blue",
+    "#000080": "navy",
+    "#87ceeb": "skyblue",
+    "#008080": "teal",
+    "#00ffff": "cyan",
+    "#008000": "green",
+    "#808000": "olive",
+    "#00ff00": "lime",
+    "#ffff00": "yellow",
+    "#ffd700": "gold",
+    "#ffa500": "orange",
+    "#a52a2a": "brown",
+    "#f5f5dc": "beige",
+    "#ffc0cb": "pink",
+    "#ff69b4": "hotpink",
+    "#800080": "purple",
+    "#4b0082": "indigo",
+    "#ffffff": "white",
+    "#000000": "black",
+    "#808080": "gray",
+    "#c0c0c0": "silver",
+}
+
 # 2. Load BLIP-2
 device = "cuda" if torch.cuda.is_available() else "cpu"
 processor = Blip2Processor.from_pretrained("Salesforce/blip2-opt-2.7b", device_map="auto")
@@ -26,7 +54,7 @@ model = Blip2ForConditionalGeneration.from_pretrained(
 # 3. Find closest color name from RGB
 def closest_color_name(rgb):
     min_colors = {}
-    for hex_code, name in webcolors.CSS3_HEX_TO_NAMES.items():
+    for hex_code, name in CSS3_HEX_TO_NAMES.items():
         r_c, g_c, b_c = webcolors.hex_to_rgb(hex_code)
         rd = (r_c - rgb[0]) ** 2
         gd = (g_c - rgb[1]) ** 2
@@ -34,7 +62,7 @@ def closest_color_name(rgb):
         min_colors[(rd + gd + bd)] = name
     return min_colors[min(min_colors.keys())]
 
-# 4. Get dominant RGB colors and names
+# 4. Get dominant RGB colors and their names
 def get_colors(image, num_colors=5):
     image = image.resize((100, 100))
     arr = np.array(image).reshape(-1, 3)
@@ -42,7 +70,7 @@ def get_colors(image, num_colors=5):
     most_common = color_counts.most_common(num_colors)
 
     colors_rgb = [list(color[0]) for color in most_common]
-    color_names = [closest_color_name(color[0]).lower() for color in most_common]
+    color_names = [closest_color_name(color[0]) for color in most_common]
 
     return {
         "rgb": colors_rgb,
