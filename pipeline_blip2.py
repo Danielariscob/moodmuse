@@ -2,7 +2,7 @@ from pymongo import MongoClient
 from PIL import Image
 import requests
 import torch
-from transformers import Blip2Processor, Blip2ForConditionalGeneration
+from transformers import BlipProcessor, BlipForConditionalGeneration
 from io import BytesIO
 import numpy as np
 from collections import Counter
@@ -43,8 +43,8 @@ CSS3_HEX_TO_NAMES = {
 
 # 2. Load BLIP-2
 device = "cuda" if torch.cuda.is_available() else "cpu"
-processor = Blip2Processor.from_pretrained("Salesforce/blip2-opt-2.7b", device_map="auto")
-model = Blip2ForConditionalGeneration.from_pretrained(
+processor = BlipProcessor.from_pretrained("Salesforce/blip2-opt-2.7b", device_map="auto")
+model = BlipForConditionalGeneration.from_pretrained(
     "Salesforce/blip2-opt-2.7b",
     torch_dtype=torch.float16 if device == "cuda" else torch.float32,
     device_map="auto"
@@ -108,7 +108,7 @@ def analyze_paintings_with_blip2():
                 return_tensors="pt"
             ).to(device, torch.float16 if device == "cuda" else torch.float32)
 
-            generated_ids = model.generate(**inputs, max_new_tokens=100)
+            generated_ids = model.generate(**inputs, max_new_tokens=150, top_k=50)
             generated_text = processor.batch_decode(generated_ids, skip_special_tokens=True)[0].strip()
 
             # Verificar la descripción generada
