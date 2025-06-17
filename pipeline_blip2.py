@@ -11,7 +11,7 @@ import webcolors
 # 1. Connect to MongoDB
 client = MongoClient("mongodb+srv://danielarb:m9IeL85JNjFWQR73@cluster0.oz78pty.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 db = client["moodmuse"]
-collection = db["paintings"]
+collection = db["paintings_subset"]
 
 # 2. Load BLIP-2
 device = "cuda" if torch.cuda.is_available() else "cpu"
